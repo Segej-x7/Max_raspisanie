@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Умное Расписание</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .schedule {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        .week-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .current-week {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .today-badge {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .day-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2px;
+            background: #ecf0f1;
+        }
+
+        .day-row {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            background: white;
+            min-height: 140px;
+        }
+
+        .day-row.today {
+            background: #fff9e6;
+            box-shadow: inset 0 0 0 3px #f39c12;
+        }
+
+        .day-name {
+            padding: 15px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .day-date {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .day-content {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .task {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .task:hover {
+            transform: translateX(5px);
+        }
+
+        .fixed-task {
+            background: #fdf2f2;
+            border-left: 3px solid #e74c3c;
+        }
+
+        .custom-task {
+            background: #f8f9fa;
+            border-left: 3px solid #3498db;
+        }
+
+        .recurring-task {
+            border-left: 3px solid #27ae60;
+        }
+
+        .task-content {
+            flex-grow: 1;
+        }
+
+        .task-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .task-time {
+            font-size: 12px;
+            color: #7f8c8d;
+            background: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .task-type {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: #34495e;
+            color: white;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .edit-btn, .delete-btn {
+            background: none;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .edit-btn {
+            color: #3498db;
+        }
+
+        .delete-btn {
+            color: #e74c3c;
+        }
+
+        .add-task-form {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 2px solid #ecf0f1;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input {
+            width: auto;
+        }
+
+        .add-btn {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .no-tasks {
+            color: #7f8c8d;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .save-btn {
+            background: #27ae60;
+            color: white;
+        }
+
+        .cancel-btn {
+            background: #95a5a6;
+            color: white;
+        }
+
+        /* Цветовые акценты для дней */
+        .monday .day-name { background: #e74c3c; }
+        .tuesday .day-name { background: #9b59b6; }
+        .wednesday .day-name { background: #3498db; }
+        .thursday .day-name { background: #f39c12; }
+        .friday .day-name { background: #1abc9c; }
+        .saturday .day-name { background: #34495e; }
+        .sunday .day-name { background: #e67e22; }
+
+        @media (max-width: 768px) {
+            .day-row {
+                grid-template-columns: 100px 1fr;
+            }
+            
+            .day-name {
+                padding: 10px;
+                font-size: 14px;
+            }
+            
+            .day-content {
+                padding: 10px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="schedule">
+        <div class="header">
+            <h1>📅 УМНОЕ РАСПИСАНИЕ</h1>
+            <div class="week-navigation">
+                <button class="nav-btn" onclick="changeWeek(-1)">◀ Предыдущая</button>
+                <div class="current-week" id="currentWeek"></div>
+                <button class="nav-btn" onclick="changeWeek(1)">Следующая ▶</button>
+            </div>
+        </div>
+        
+        <div class="day-grid" id="scheduleGrid">
+            <!-- Расписание будет сгенерировано JavaScript -->
+        </div>
+        
+        <div class="add-task-form">
+            <h3 style="margin-bottom: 15px; color: #2c3e50;">➕ Добавить новое дело</h3>
+            <div class="form-group">
+                <label for="taskDay">День недели:</label>
+                <select id="taskDay">
+                    <option value="0">Понедельник</option>
+                    <option value="1">Вторник</option>
+                    <option value="2">Среда</option>
+                    <option value="3">Четверг</option>
+                    <option value="4">Пятница</option>
+                    <option value="5">Суббота</option>
+                    <option value="6">Воскресенье</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="taskText">Описание дела:</label>
+                <textarea id="taskText" placeholder="Подробное описание задания..."></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="taskTime">Время (необязательно):</label>
+                    <input type="time" id="taskTime">
+                </div>
+                
+                <div class="form-group">
+                    <label>Тип задания:</label>
+                    <select id="taskType">
+                        <option value="single">Разовое</option>
+                        <option value="recurring">Длящееся</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="add-btn" onclick="addCustomTask()">Добавить дело</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Редактировать задание</h3>
+            <div class="form-group">
+                <label for="editTaskText">Описание дела:</label>
+                <textarea id="editTaskText"></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editTaskTime">Время:</label>
+                    <input type="time" id="editTaskTime">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editTaskType">Тип задания:</label>
+                    <select id="editTaskType">
+                        <option value="single">Разовое</option>
+                        <option value="recurring">Длящееся</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="modal-btn save-btn" onclick="saveTask()">Сохранить</button>
+                <button class="modal-btn cancel-btn" onclick="closeModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // База данных в localStorage
+        const DB_KEY = 'smartScheduleData';
+        const FIXED_TASKS_KEY = 'fixedScheduleData';
+        
+        // Изначальные фиксированные занятия
+        const defaultFixedSchedule = [
+            { 
+                text: "Лекция по Обществу 1,5 часа",
+                time: "",
+                type: "single",
+                id: "fixed_0"
+            },
+            { 
+                text: "Практика по обществу 40 мин\nПрактика по русскому языку 40 мин",
+                time: "",
+                type: "single",
+                id: "fixed_1"
+            },
+            { 
+                text: "Репетитор по праву 60 мин",
+                time: "20:00",
+                type: "single",
+                id: "fixed_2"
+            },
+            { 
+                text: "Лекция по истории 1,5 часа",
+                time: "",
+                type: "single",
+                id: "fixed_3"
+            },
+            { 
+                text: "Практика по истории 40 мин",
+                time: "",
+                type: "single",
+                id: "fixed_4"
+            },
+            { 
+                text: "Репетитор по русскому 90 мин",
+                time: "12:00",
+                type: "single",
+                id: "fixed_5"
+            },
+            { 
+                text: "Репетитор по праву 60 мин",
+                time: "20:00",
+                type: "single",
+                id: "fixed_6"
+            }
+        ];
+
+        let currentWeekOffset = 0;
+        let currentEditingTask = null;
+
+        // Инициализация базы данных
+        function initializeDatabase() {
+            if (!localStorage.getItem(DB_KEY)) {
+                localStorage.setItem(DB_KEY, JSON.stringify({}));
+            }
+            if (!localStorage.getItem(FIXED_TASKS_KEY)) {
+                localStorage.setItem(FIXED_TASKS_KEY, JSON.stringify(defaultFixedSchedule));
+            }
+        }
+
+        // Получить фиксированные задания
+        function getFixedTasks() {
+            return JSON.parse(localStorage.getItem(FIXED_TASKS_KEY) || '[]');
+        }
+
+        // Сохранить фиксированные задания
+        function saveFixedTasks(tasks) {
+            localStorage.setItem(FIXED_TASKS_KEY, JSON.stringify(tasks));
+        }
+
+        // Получить данные за неделю
+        function getWeekData(weekKey) {
+            const allData = JSON.parse(localStorage.getItem(DB_KEY) || '{}');
+            return allData[weekKey] || {};
+        }
+
+        // Сохранить данные за неделю
+        function saveWeekData(weekKey, data) {
+            const allData = JSON.parse(localStorage.getItem(DB_KEY) || '{}');
+            allData[weekKey] = data;
+            localStorage.setItem(DB_KEY, JSON.stringify(allData));
+        }
+
+        // Добавить пользовательское дело
+        function addCustomTask() {
+            const dayIndex = parseInt(document.getElementById('taskDay').value);
+            const taskText = document.getElementById('taskText').value.trim();
+            const taskTime = document.getElementById('taskTime').value;
+            const taskType = document.getElementById('taskType').value;
+            
+            if (!taskText) {
+                alert('Введите описание дела!');
+                return;
+            }
+
+            const weekKey = getWeekKey();
+            const weekData = getWeekData(weekKey);
+            
+            if (!weekData[dayIndex]) {
+                weekData[dayIndex] = [];
+            }
+            
+            weekData[dayIndex].push({
+                text: taskText,
+                time: taskTime,
+                type: taskType,
+                id: Date.now() + Math.random()
+            });
+            
+            saveWeekData(weekKey, weekData);
+            renderSchedule();
+            
+            // Очистить форму
+            document.getElementById('taskText').value = '';
+            document.getElementById('taskTime').value = '';
+        }
+
+        // Открыть модальное окно редактирования
+        function openEditModal(task, dayIndex, isFixed = false) {
+            currentEditingTask = { task, dayIndex, isFixed };
+            
+            document.getElementById('editTaskText').value = task.text;
+            document.getElementById('editTaskTime').value = task.time || '';
+            document.getElementById('editTaskType').value = task.type || 'single';
+            
+            document.getElementById('modalTitle').textContent = 
+                isFixed ? 'Редактировать фиксированное задание' : 'Редактировать задание';
+            
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        // Закрыть модальное окно
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+            currentEditingTask = null;
+        }
+
+        // Сохранить изменения задания
+        function saveTask() {
+            if (!currentEditingTask) return;
+            
+            const newText = document.getElementById('editTaskText').value.trim();
+            const newTime = document.getElementById('editTaskTime').value;
+            const newType = document.getElementById('editTaskType').value;
+            
+            if (!newText) {
+                alert('Введите описание дела!');
+                return;
+            }
+            
+            if (currentEditingTask.isFixed) {
+                // Редактирование фиксированного задания
+                const fixedTasks = getFixedTasks();
+                const taskIndex = fixedTasks.findIndex(t => t.id === currentEditingTask.task.id);
+                if (taskIndex !== -1) {
+                    fixedTasks[taskIndex] = {
+                        ...fixedTasks[taskIndex],
+                        text: newText,
+                        time: newTime,
+                        type: newType
+                    };
+                    saveFixedTasks(fixedTasks);
+                }
+            } else {
+                // Редактирование пользовательского задания
+                const weekKey = getWeekKey();
+                const weekData = getWeekData(weekKey);
+                
+                if (weekData[currentEditingTask.dayIndex]) {
+                    const taskIndex = weekData[currentEditingTask.dayIndex].findIndex(
+                        t => t.id === currentEditingTask.task.id
+                    );
+                    if (taskIndex !== -1) {
+                        weekData[currentEditingTask.dayIndex][taskIndex] = {
+                            ...weekData[currentEditingTask.dayIndex][taskIndex],
+                            text: newText,
+                            time: newTime,
+                            type: newType
+                        };
+                        saveWeekData(weekKey, weekData);
+                    }
+                }
+            }
+            
+            closeModal();
+            renderSchedule();
+        }
+
+        // Удалить задание
+        function deleteTask(dayIndex, taskId, isFixed = false) {
+            if (!confirm('Удалить это задание?')) return;
+            
+            if (isFixed) {
+                const fixedTasks = getFixedTasks();
+                const updatedTasks = fixedTasks.filter(task => task.id !== taskId);
+                saveFixedTasks(updatedTasks);
+            } else {
+                const weekKey = getWeekKey();
+                const weekData = getWeekData(weekKey);
+                
+                if (weekData[dayIndex]) {
+                    weekData[dayIndex] = weekData[dayIndex].filter(task => task.id !== taskId);
+                    saveWeekData(weekKey, weekData);
+                }
+            }
+            
+            renderSchedule();
+        }
+
+        // Получить ключ для текущей недели
+        function getWeekKey() {
+            const today = new Date();
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay() + 1 + (currentWeekOffset * 7));
+            startOfWeek.setHours(0, 0, 0, 0);
+            return startOfWeek.toISOString().split('T')[0];
+        }
+
+        // Получить даты для текущей недели
+        function getWeekDates() {
+            const dates = [];
+            const today = new Date();
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay() + 1 + (currentWeekOffset * 7));
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(startOfWeek);
+                date.setDate(startOfWeek.getDate() + i);
+                dates.push(date);
+            }
+            return dates;
+        }
+
+        // Проверить, является ли дата сегодняшним днем
+        function isToday(date) {
+            const today = new Date();
+            return date.toDateString() === today.toDateString();
+        }
+
+        // Обновить отображение текущей недели
+        function updateWeekDisplay() {
+            const dates = getWeekDates();
+            const start = dates[0];
+            const end = dates[6];
+            
+            const options = { day: 'numeric', month: 'long' };
+            const weekDisplay = `${start.toLocaleDateString('ru-RU', options)} - ${end.toLocaleDateString('ru-RU', options)}`;
+            
+            document.getElementById('currentWeek').textContent = weekDisplay;
+        }
+
+        // Сменить неделю
+        function changeWeek(direction) {
+            currentWeekOffset += direction;
+            renderSchedule();
+        }
+
+        // Отрисовать расписание
+        function renderSchedule() {
+            const grid = document.getElementById('scheduleGrid');
+            grid.innerHTML = '';
+            
+            const dates = getWeekDates();
+            const weekKey = getWeekKey();
+            const weekData = getWeekData(weekKey);
+            const fixedTasks = getFixedTasks();
+            
+            const dayNames = ['ПОНЕДЕЛЬНИК', 'ВТОРНИК', 'СРЕДА', 'ЧЕТВЕРГ', 'ПЯТНИЦА', 'СУББОТА', 'ВОСКРЕСЕНЬЕ'];
+            const dayClasses = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            
+            dayNames.forEach((dayName, index) => {
+                const date = dates[index];
+                const isTodayDate = isToday(date);
+                
+                const dayRow = document.createElement('div');
+                dayRow.className = `day-row ${dayClasses[index]} ${isTodayDate ? 'today' : ''}`;
+                
+                const dateStr = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+                
+                dayRow.innerHTML = `
+                    <div class="day-name">
+                        ${dayName}
+                        <div class="day-date">
+                            ${dateStr}
+                            ${isTodayDate ? '<div class="today-badge">Сегодня</div>' : ''}
+                        </div>
+                    </div>
+                    <div class="day-content">
+                        ${renderTasks(fixedTasks[index], weekData[index] || [], index, date)}
+                    </div>
+                `;
+                
+                grid.appendChild(dayRow);
+            });
+            
+            updateWeekDisplay();
+        }
+
+        // Отрисовать задания для дня
+        function renderTasks(fixedTask, customTasks, dayIndex, date) {
+            let html = '';
+            
+            // Фиксированное задание
+            if (fixedTask) {
+                html += `
+                    <div class="task fixed-task ${fixedTask.type === 'recurring' ? 'recurring-task' : ''}" 
+                         onclick="openEditModal(${JSON.stringify(fixedTask).replace(/"/g, '&quot;')}, ${dayIndex}, true)">
+                        <div class="task-content">
+                            ${fixedTask.text.replace(/\n/g, '<br>')}
+                            <div class="task-meta">
+                                ${fixedTask.time ? `<span class="task-time">${fixedTask.time}</span>` : ''}
+                                <span class="task-type">${fixedTask.type === 'recurring' ? 'Длящееся' : 'Разовое'}</span>
+                            </div>
+                        </div>
+                        <div class="task-actions">
+                            <button class="edit-btn" onclick="event.stopPropagation(); openEditModal(${JSON.stringify(fixedTask).replace(/"/g, '&quot;')}, ${dayIndex}, true)">✏️</button>
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteTask(${dayIndex}, '${fixedTask.id}', true)">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Пользовательские задания
+            if (customTasks.length > 0) {
+                html += customTasks.map(task => `
+                    <div class="task custom-task ${task.type === 'recurring' ? 'recurring-task' : ''}" 
+                         onclick="openEditModal(${JSON.stringify(task).replace(/"/g, '&quot;')}, ${dayIndex}, false)">
+                        <div class="task-content">
+                            ${task.text.replace(/\n/g, '<br>')}
+                            <div class="task-meta">
+                                ${task.time ? `<span class="task-time">${task.time}</span>` : ''}
+                                <span class="task-type">${task.type === 'recurring' ? 'Длящееся' : 'Разовое'}</span>
+                            </div>
+                        </div>
+                        <div class="task-actions">
+                            <button class="edit-btn" onclick="event.stopPropagation(); openEditModal(${JSON.stringify(task).replace(/"/g, '&quot;')}, ${dayIndex}, false)">✏️</button>
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteTask(${dayIndex}, ${task.id}, false)">🗑️</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            if (!fixedTask && customTasks.length === 0) {
+                html += '<div class="no-tasks">Нажмите, чтобы добавить задание</div>';
+            }
+            
+            return html;
+        }
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDatabase();
+            renderSchedule();
+            
+            // Закрытие модального окна при клике вне его
+            document.getElementById('editModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
